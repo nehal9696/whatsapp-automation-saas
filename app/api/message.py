@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.message import Message
@@ -12,16 +12,37 @@ def get_db():
     finally:
         db.close()
 
+def process_message(message_id: int):
+    db = SessionLocal()
+
+    message = db.query(Message).filter(Message.id == message_id).first()
+
+    if message:
+        message.status = "sent"
+        db.commit()
+
+    db.close()
+
 @router.post("/send-message")
-def send_message(content: str, phone: str, business_id: int, db: Session = Depends(get_db)):
+def send_message(
+    content: str,
+    phone: str,
+    business_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     message = Message(
         content=content,
         phone=phone,
         business_id=business_id,
         status="pending"
     )
+
     db.add(message)
     db.commit()
     db.refresh(message)
+
+    # async processing
+    background_tasks.add_task(process_message, message.id)
 
     return {"message": "Message queued", "data": message}

@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.message import Message
 
+from app.schemas.webhook import WebhookUpdate
+
 router = APIRouter(prefix="/webhook")
 
 def get_db():
@@ -15,23 +17,22 @@ def get_db():
 
 @router.post("/message-status")
 def update_message_status(
-    message_id: int,
-    status: str,
+    webhook_data: WebhookUpdate,
     db: Session = Depends(get_db)
 ):
 
     message = db.query(Message).filter(
-        Message.id == message_id
+        Message.id == webhook_data.message_id
     ).first()
 
     if not message:
         return {"error": "Message not found"}
 
-    message.status = status
+    message.status = webhook_data.status
 
     db.commit()
 
     return {
         "message": "Status updated",
-        "status": status
+        "status": webhook_data.status
     }

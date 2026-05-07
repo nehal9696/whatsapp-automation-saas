@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, Request
 from sqlalchemy.orm import Session
+
 from app.db.database import SessionLocal
 from app.models.message import Message
-from app.core.logger import logger
+from app.models.user import User
+
+from app.schemas.message import (
+    MessageCreate,
+    MessageResponse
+)
+
+from app.core.dependencies import get_current_user
 from app.core.rate_limiter import limiter
-from fastapi import Request
+from app.core.logger import logger
 
 router = APIRouter(prefix="/api")
 
@@ -16,30 +24,25 @@ def get_db():
         db.close()
 
 def process_message(message_id: int):
-    db = SessionLocal()
+    logger.info(f"Processing message {message_id}")
 
-    message = db.query(Message).filter(Message.id == message_id).first()
-
-    if message:
-        message.status = "sent"
-        db.commit()
-
-    db.close()
-
-@router.post("/send-message")
+@router.post(
+    "/send-message",
+    response_model=MessageResponse
+)
 @limiter.limit("5/minute")
 def send_message(
     request: Request,
-    content: str,
-    phone: str,
-    business_id: int,
+    message_data: MessageCreate,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+
     message = Message(
-        content=content,
-        phone=phone,
-        business_id=business_id,
+        content=message_data.content,
+        phone=message_data.phone,
+        business_id=message_data.business_id,
         status="pending"
     )
 
@@ -47,9 +50,13 @@ def send_message(
     db.commit()
     db.refresh(message)
 
-    # async processing
-    background_tasks.add_task(process_message, message.id)
-    
-    logger.info(f"Processing message {message.id}")
+    background_tasks.add_task(
+        process_message,
+        message.id
+    )
 
-    return {"message": "Message queued", "data": message}
+    logger.info(
+        f"Message queued by user {current_user.id}"
+    )
+
+    return message

@@ -4,6 +4,7 @@ from app.db.database import SessionLocal
 from app.models.business import Business
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.core.logger import logger
 
 router = APIRouter(prefix="/api")
 
@@ -30,4 +31,5 @@ def create_business(
     db.commit()
     db.refresh(business)
 
+    logger.info(f"Creating business for user {current_user.id}")
     return business

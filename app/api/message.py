@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.message import Message
+from app.core.logger import logger
+from app.core.rate_limiter import limiter
+from fastapi import Request
 
 router = APIRouter(prefix="/api")
 
@@ -24,7 +27,9 @@ def process_message(message_id: int):
     db.close()
 
 @router.post("/send-message")
+@limiter.limit("5/minute")
 def send_message(
+    request: Request,
     content: str,
     phone: str,
     business_id: int,
@@ -44,5 +49,7 @@ def send_message(
 
     # async processing
     background_tasks.add_task(process_message, message.id)
+    
+    logger.info(f"Processing message {message.id}")
 
     return {"message": "Message queued", "data": message}

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from app.core.rate_limiter import limiter
+from fastapi import Request
 
 from app.db.database import SessionLocal
 from app.models.user import User

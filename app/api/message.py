@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
 from app.models.message import Message
+from app.db.dependencies import get_db
 from app.models.user import User
 
 from app.schemas.message import (
@@ -15,13 +15,6 @@ from app.core.rate_limiter import limiter
 from app.core.logger import logger
 
 router = APIRouter(prefix="/api")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 def process_message(message_id: int):
     logger.info(f"Processing message {message_id}")

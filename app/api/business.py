@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
+from app.db.dependencies import get_db
+from app.core.dependencies import get_current_user
+
 from app.models.business import Business
 from app.models.user import User
 
@@ -10,17 +12,7 @@ from app.schemas.business import (
     BusinessResponse
 )
 
-from app.core.dependencies import get_current_user
-from app.core.logger import logger
-
 router = APIRouter(prefix="/api")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post(
     "/business",
@@ -32,9 +24,7 @@ def create_business(
     db: Session = Depends(get_db)
 ):
 
-    logger.info(
-        f"Creating business for user {current_user.id}"
-    )
+    print("CURRENT USER:", current_user)
 
     business = Business(
         name=business_data.name,

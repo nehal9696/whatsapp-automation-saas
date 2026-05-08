@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from app.db.database import Base
 
 class Message(Base):
@@ -9,3 +11,4 @@ class Message(Base):
     phone = Column(String, nullable=False)
     status = Column(String, default="pending")
     business_id = Column(Integer, ForeignKey("businesses.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)

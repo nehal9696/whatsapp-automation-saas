@@ -7,8 +7,19 @@ from app.api.webhook import router as webhook_router
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.core.rate_limiter import limiter
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.state.limiter = limiter
 

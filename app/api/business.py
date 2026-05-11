@@ -14,6 +14,18 @@ from app.schemas.business import (
 
 router = APIRouter(prefix="/api")
 
+@router.get("/businesses")
+def get_businesses(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    businesses = db.query(Business).filter(
+        Business.owner_id == current_user.id
+    ).all()
+
+    return businesses
+
 @router.post(
     "/business",
     response_model=BusinessResponse
